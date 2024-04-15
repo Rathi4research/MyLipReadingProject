@@ -19,7 +19,6 @@ def load_training_metadata(driverfile):
 def get_video_frames_np(framesDirectory):
 
     files = os.listdir(framesDirectory)
-
     # Filter out only the .png files
     png_files = [file for file in files if file.endswith('.png')]
     frame_count = len(png_files)
@@ -29,11 +28,21 @@ def get_video_frames_np(framesDirectory):
             frame_path = os.path.join(framesDirectory, f'frame{i}.png')
             frame = cv2.imread(frame_path)
             frame = cv2.resize(frame, (224, 224))  # Resize frame to 224x224
-            frame = frame.astype(np.float32) / 255.0  # Normalize pixel values
+            # frame = frame.astype(np.float32) / 255.0  # Normalize pixel values
             processed_frames.append(frame)
+
+    # Pad or truncate frames to target length
+    processed_frames += [np.zeros_like(processed_frames[0])] * (100 - len(processed_frames))
+    processed_frames = processed_frames[:100]
 
     return np.array(processed_frames)
 
-def get_audio(audioFilePath):
-    audio, sr = librosa.load(audioFilePath, sr=16000)
+def get_audio(audioFilePath,target_length=16000):
+    audio, _ = librosa.load(audioFilePath, sr=16000)  # Adjust sample rate as needed
+    # Pad or truncate audio to target length
+    if len(audio) < target_length:
+        audio = np.concatenate([audio, np.zeros(target_length - len(audio))])
+    else:
+        audio = audio[:target_length]
+
     return audio
